@@ -135,13 +135,111 @@ RSpec.describe 'Application show page' do
     expect(current_path).to eq("/applications/#{brooke.id}")
     expect(page).to have_content('Lucille Bald')
   end
+
+  it 'can find partial matches for pet names' do
+    shelter = Shelter.create!(name: "Dumb Friends League", city: "Aurora", foster_program: true, rank: 7)
+
+    brooke = Application.create!(
+            name: "Brooke Hoffmann",
+            street_address: "448 N Montgomery St",
+            city: "Aurora",
+            state: "CO",
+            zip_code: 80014,
+            description: "I'm an experienced pet owner"
+              )
+
+    pet_1 = Pet.create!(adoptable: true, age: 1, breed: 'sphynx', name: 'Lucille Bald', shelter_id: shelter.id)
+    pet_2 = Pet.create!(adoptable: true, age: 3, breed: 'doberman', name: 'Lobster', shelter_id: shelter.id)
+    pet_3 = Pet.create!(adoptable: true, age: 5, breed: 'husky', name: 'Zippy', shelter_id: shelter.id)
+
+    PetApplication.create!(application_id: brooke.id, pet_id: pet_1.id)
+
+    visit "/applications/#{brooke.id}"
+
+    fill_in 'search', with: 'Lucille'
+    click_on("Search")
+
+    expect(current_path).to eq("/applications/#{brooke.id}")
+    expect(page).to have_button("Adopt this Pet")
+
+    click_on("Adopt this Pet")
+
+    expect(current_path).to eq("/applications/#{brooke.id}")
+    expect(page).to have_content('Lucille Bald')
+  end
+
+  it 'searches for pets are case insensitive' do
+    shelter = Shelter.create!(name: "Dumb Friends League", city: "Aurora", foster_program: true, rank: 7)
+
+    brooke = Application.create!(
+            name: "Brooke Hoffmann",
+            street_address: "448 N Montgomery St",
+            city: "Aurora",
+            state: "CO",
+            zip_code: 80014,
+            description: "I'm an experienced pet owner"
+              )
+
+    pet_1 = Pet.create!(adoptable: true, age: 1, breed: 'sphynx', name: 'Lucille Bald', shelter_id: shelter.id)
+    pet_2 = Pet.create!(adoptable: true, age: 3, breed: 'doberman', name: 'Lobster', shelter_id: shelter.id)
+    pet_3 = Pet.create!(adoptable: true, age: 5, breed: 'husky', name: 'Zippy', shelter_id: shelter.id)
+
+    PetApplication.create!(application_id: brooke.id, pet_id: pet_1.id)
+
+    visit "/applications/#{brooke.id}"
+
+    fill_in 'search', with: 'lUcillE balD'
+    click_on("Search")
+
+    expect(current_path).to eq("/applications/#{brooke.id}")
+    expect(page).to have_button("Adopt this Pet")
+
+    click_on("Adopt this Pet")
+
+    expect(current_path).to eq("/applications/#{brooke.id}")
+    expect(page).to have_content('Lucille Bald')
+  end
+
+  it 'allows applicant to submit application' do
+
+    shelter = Shelter.create!(name: "Dumb Friends League", city: "Aurora", foster_program: true, rank: 7)
+
+    brooke = Application.create!(
+            name: "Brooke Hoffmann",
+            street_address: "448 N Montgomery St",
+            city: "Aurora",
+            state: "CO",
+            zip_code: 80014,
+            description: "I'm an experienced pet owner"
+              )
+
+    pet_1 = Pet.create!(adoptable: true, age: 1, breed: 'sphynx', name: 'Lucille Bald', shelter_id: shelter.id)
+    pet_2 = Pet.create!(adoptable: true, age: 3, breed: 'doberman', name: 'Lobster', shelter_id: shelter.id)
+    pet_3 = Pet.create!(adoptable: true, age: 5, breed: 'husky', name: 'Zippy', shelter_id: shelter.id)
+
+    PetApplication.create!(application_id: brooke.id, pet_id: pet_1.id)
+
+    visit "/applications/#{brooke.id}"
+
+    expect(page).to_not have_content("Submit Application")
+
+    fill_in 'search', with: 'Lucille Bald'
+    click_on("Search")
+
+    click_on("Adopt this Pet")
+
+    expect(page).to have_button("Submit Application")
+
+    expect(page).to have_content("Why would you make a good owner for this pet?")
+
+    fill_in "description", with: "I love cats"
+
+    click_on("Submit Application")
+
+    expect(current_path).to eq("/applications/#{brooke.id}")
+    expect(page).to have_content("Status of application: Pending")
+    expect(page).to have_content('Pets applied for: Lucille Bald')
+    # need to add within blocks and div tags
+    # expect(page).to_not have_content("Add a pet to this application")
+  end
 end
-
-# As a visitor
-# When I visit an application's show page
-# And I search for a Pet by name
-
-# Then next to each Pet's name I see a button to "Adopt this Pet"
-# When I click one of these buttons
-# Then I am taken back to the application show page
-# And I see the Pet I want to adopt listed on this application
